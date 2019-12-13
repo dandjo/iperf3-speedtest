@@ -20,7 +20,7 @@ for TYPE in "download" "upload"; do
     PORT=$START_PORT
     HOST_INDEX=0
     while true; do
-        CMD="iperf3 --client ${HOST[$HOST_INDEX]} --port $PORT --parallel 10 --version4 --json"
+        CMD="iperf3 --client ${HOST[$HOST_INDEX]} --port $PORT --parallel 10 --version4 --interval 0 --connect-timeout 50 --json"
         if [ "$TYPE" = "download" ]; then
             CMD="$CMD --reverse"
         fi
