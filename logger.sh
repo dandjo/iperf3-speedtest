@@ -2,8 +2,7 @@
 
 LC_NUMERIC="en_US.UTF-8"
 
-SCRIPTPATH=$(dirname $0)
-FILE=$SCRIPTPATH/iperf3.csv
+LOGFILE=/var/log/iperf3.csv
 
 HOSTS[0]=speedtest.serverius.net:5002-5002
 HOSTS[1]=speedtest.wtnet.de:5200-5209
@@ -12,28 +11,32 @@ HOSTS[3]=bouygues.testdebit.info:5200-5209
 HOSTS[4]=bouygues.iperf.fr:5200-5209
 HOSTS[5]=ping-ams1.online.net:5200-5209
 
-killall -9 iperf3
+DURATION_DOWNLOAD=30
+DURATION_UPLOAD=10
+PARALLEL_CONNECTIONS=10
 
-printf '"%s",' "$(date +'%FT%T%:z')" >> $FILE
+killall -9 iperf3 1>/dev/null 2>&1
+
+printf '"%s",' "$(date +'%FT%T%:z')" >> $LOGFILE
 
 for TYPE in "download" "upload"; do
     HOST_INDEX=0
     while true; do
-        HOST_CONFIG=${HOSTS[$HOST_INDEX]}
-        HOST_AND_PORTS=(${HOST_CONFIG//:/ })
-        HOST=${HOST_AND_PORTS[0]}
-        PORT_RANGE=${HOST_AND_PORTS[1]}
-        START_AND_ENDPORT=(${PORT_RANGE//-/ })
-        START_PORT=${START_AND_ENDPORT[0]}
-        END_PORT=${START_AND_ENDPORT[1]}
+        HOSTS_CONFIG=${HOSTS[$HOST_INDEX]}
+        HOSTS_AND_PORTS=(${HOSTS_CONFIG//:/ })
+        HOST=${HOSTS_AND_PORTS[0]}
+        PORT_RANGE=${HOSTS_AND_PORTS[1]}
+        START_END_PORT=(${PORT_RANGE//-/ })
+        START_PORT=${START_END_PORT[0]}
+        END_PORT=${START_END_PORT[1]}
         PORT=$START_PORT
         while true; do
-            CMD="iperf3 --client $HOST --port $PORT --parallel 10 --version4 --interval 0 --json"
+            CMD="iperf3 --client $HOST --port $PORT --parallel $PARALLEL_CONNECTIONS --interval 0 --json"
             if [ "$TYPE" = "download" ]; then
-                CMD="$CMD --reverse --time 60"
+                CMD="$CMD --reverse --time $DURATION_DOWNLOAD"
             fi
             if [ "$TYPE" = "upload" ]; then
-                CMD="$CMD --time 30"
+                CMD="$CMD --time $DURATION_UPLOAD"
             fi
             BITS=$(jq -r '.end.sum_received.bits_per_second' <<< $($CMD))
             if [ "$BITS" != "null" ]; then
@@ -49,11 +52,11 @@ for TYPE in "download" "upload"; do
             break 1
         fi
     done
-    printf '"%.3f",' "$(awk '{print $0 / 1000000}' <<< $BITS)" >> $FILE
-    printf '"%s"' "$HOST:$PORT" >> $FILE
+    printf '"%.3f",' "$(awk '{print $0 / 1000000}' <<< $BITS)" >> $LOGFILE
+    printf '"%s"' "$HOST:$PORT" >> $LOGFILE
     if [ "$TYPE" = "download" ]; then
-        printf ',' >> $FILE
+        printf ',' >> $LOGFILE
     fi
 done
 
-printf '\n' >> $FILE
+printf '\n' >> $LOGFILE
