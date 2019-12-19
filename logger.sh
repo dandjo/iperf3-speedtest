@@ -39,7 +39,7 @@ for TYPE in "download" "upload"; do
                 CMD="$CMD --time $DURATION_UPLOAD"
             fi
             BITS=$(jq -r '.end.sum_received.bits_per_second' <<< $($CMD))
-            if [[ $BITS =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+            if [[ $BITS =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
                 break 2
             fi
             let PORT++
