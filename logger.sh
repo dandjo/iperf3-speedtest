@@ -15,9 +15,8 @@ DURATION_DOWNLOAD=30
 DURATION_UPLOAD=10
 PARALLEL_CONNECTIONS=10
 
-for PID in $(pidof iperf3); do
-    kill -9 $PID 1>/dev/null 2>&1
-done
+kill -9 $(cat /tmp/iperf3.pid) 1>/dev/null 2>&1
+printf '%s' $$ > /tmp/iperf3.pid
 
 printf '"%s",' "$(date +'%FT%T%:z')" >> $LOGFILE
 
