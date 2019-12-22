@@ -64,5 +64,4 @@ for TYPE in "download" "upload"; do
     OUTPUT=$OUTPUT,$(printf '"%.3f"' "$(awk '{print $0 / 1000000}' <<< $BITS)"),$(printf '"%s"' "$HOST:$PORT")
 done
 
-OUTPUT=$OUTPUT$(printf '\n')
-printf $OUTPUT >> $LOGFILE
+printf '%s\n' $OUTPUT >> $LOGFILE
