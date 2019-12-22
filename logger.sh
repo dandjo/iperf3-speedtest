@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+PATH=/opt/bin:$PATH
+
 LC_NUMERIC="en_US.UTF-8"
 
 LOGFILE=/var/log/iperf3.csv
@@ -15,10 +17,16 @@ DURATION_DOWNLOAD=30
 DURATION_UPLOAD=10
 PARALLEL_CONNECTIONS=10
 
-kill -9 $(cat /tmp/iperf3.pid) 1>/dev/null 2>&1
-printf '%s' $$ > /tmp/iperf3.pid
+for PID in $(pidof bash $0); do
+    if [ ! "$PID" = "$$" ]; then
+        kill $PID
+    fi
+done
+for PID in $(pidof iperf3); do
+    kill -9 $PID
+done
 
-printf '"%s",' "$(date +'%FT%T%:z')" >> $LOGFILE
+OUTPUT=$(printf '"%s"' "$(date +'%FT%T%:z')")
 
 for TYPE in "download" "upload"; do
     HOST_INDEX=0
@@ -53,11 +61,8 @@ for TYPE in "download" "upload"; do
             break 1
         fi
     done
-    printf '"%.3f",' "$(awk '{print $0 / 1000000}' <<< $BITS)" >> $LOGFILE
-    printf '"%s"' "$HOST:$PORT" >> $LOGFILE
-    if [ "$TYPE" = "download" ]; then
-        printf ',' >> $LOGFILE
-    fi
+    OUTPUT=$OUTPUT,$(printf '"%.3f"' "$(awk '{print $0 / 1000000}' <<< $BITS)"),$(printf '"%s"' "$HOST:$PORT")
 done
 
-printf '\n' >> $LOGFILE
+OUTPUT=$OUTPUT$(printf '\n')
+printf $OUTPUT >> $LOGFILE
